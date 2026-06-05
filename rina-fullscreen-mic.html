@@ -46,7 +46,10 @@ const VISEMES = [
 
 let currentEyes = "smile";
 let level = 0, openness = 0, running = false;
-const SENS = 2.2, SMOOTH = 0.5;
+const GATE = 0.06;      // noise gate: only really loud sound opens the mouth
+const GAIN = 22;        // very sensitive once past the gate
+const MAX_OPEN = 0.58;  // mouth moves less — caps how wide it opens
+const SMOOTH = 0.64;    // a touch steadier (less flapping)
 
 /* compose face: random eyes (rows 0-15) + mic-driven mouth (rows 16-21) */
 function activeGrid(){
@@ -141,9 +144,9 @@ function loop(){
     analyser.getFloatTimeDomainData(dataArr);
     let s=0; for(let i=0;i<dataArr.length;i++) s+=dataArr[i]*dataArr[i];
     const rms=Math.sqrt(s/dataArr.length);
-    target=Math.min(1, rms*SENS*9);
+    target = rms <= GATE ? 0 : Math.min(MAX_OPEN, (rms - GATE) * GAIN);
     const a = target>openness ? (1-SMOOTH*0.55) : (1-SMOOTH);
-    openness += (target-openness)*Math.max(0.1,a);
+    openness += (target-openness)*Math.max(0.08,a);
   } else openness=0;
   level=Math.max(0,Math.min(4,Math.round(openness*4)));
   draw();
